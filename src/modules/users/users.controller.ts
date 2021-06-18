@@ -17,11 +17,9 @@ export class UsersController {
     @Get(':id')
     async profile(@Param('id') id: number, @Request() req): Promise<User> {
         const user = this.userService.findOneById(id);
-
         if (!user) {
             throw new NotFoundException();
         }
-
         return user;
     }
 
@@ -33,9 +31,9 @@ export class UsersController {
         @Query('offset') offset: number = 1,
         @Query('limit') limit: number = 5,
     ): Promise<any> {
-        const data = await this.userService.findAll(limit, offset);
-        return  data;
+        return  await this.userService.findAll(limit, offset);
     }
+
     @ApiBearerAuth()
     @UseGuards(AuthGuard('jwt'))
     @ApiOkResponse({ type: UserDto })
@@ -43,6 +41,7 @@ export class UsersController {
     async update(@Param('id') id: number, @Body() user: UserDto, @Request() req): Promise<User> {
         return this.userService.updateUser(id, req.user.id);
     }
+
     @ApiBearerAuth()
     @UseGuards(AuthGuard('jwt'))
     @Delete(':id')

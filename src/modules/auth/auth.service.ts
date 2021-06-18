@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {Injectable} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
+import {JwtService} from '@nestjs/jwt';
 
-import { UsersService } from '../users/users.service';
+import {UsersService} from '../users/users.service';
 
 @Injectable()
 export class AuthService {
@@ -13,17 +13,16 @@ export class AuthService {
 
     async validateUser(login: string, pass: string) {
         // find if user exist with this email or phone number
-        const user =  await this.userService.findOneByEmail(login);
+        const userWithEmail =  await this.userService.findOneByEmail(login);
+        const userWithPhone = await this.userService.findOneByPhone(login);
 
-        // tslint:disable-next-line:no-console
-        console.log(user);
-        //  : await this.userService.findOneByPhone(login);
-        if (!user) {
+        if (!userWithEmail || !userWithPhone) {
             return null;
         }
+        const user = (userWithEmail) ? userWithEmail : userWithPhone;
 
         // find if user password match
-        const match = await this.comparePassword(pass, user.password);
+        const match = await AuthService.comparePassword(pass, user.password);
 
         if (!match) {
             return null;
@@ -41,7 +40,7 @@ export class AuthService {
 
     public async create(user) {
         // hash the password
-        const pass = await this.hashPassword(user.password);
+        const pass = await AuthService.hashPassword(user.password);
 
         // create the user
         const newUser = await this.userService.create({ ...user, password: pass });
@@ -57,17 +56,14 @@ export class AuthService {
     }
 
     private async generateToken(user) {
-        const token = await this.jwtService.signAsync(user);
-        return token;
+        return await this.jwtService.signAsync(user);
     }
 
-    private async hashPassword(password) {
-        const hash = await bcrypt.hash(password, 10);
-        return hash;
+    private static async hashPassword(password) {
+        return await bcrypt.hash(password, 10);
     }
 
-    private async comparePassword(enteredPassword, dbPassword) {
-        const match = await bcrypt.compare(enteredPassword, dbPassword);
-        return match;
+    private static async comparePassword(enteredPassword, dbPassword) {
+        return await bcrypt.compare(enteredPassword, dbPassword);
     }
 }
